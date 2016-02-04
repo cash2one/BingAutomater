@@ -104,7 +104,8 @@ class BingSearcher:
                  entry_url=ENTRY_URL, ua=None, 
                  profile=None):
         self.profile = profile if profile else make_profile()
-        self.user, self.pw = auth_info if auth_info else self.get_auth_info()
+        self.user, self.pw = auth_info if auth_info else get_user_info()
+        self.authToken = None
 
        # self.initializeDriver()
 
@@ -127,8 +128,13 @@ class BingSearcher:
             user.submit()
             time.sleep(5)
 
+            self.authToken = self.driver.get_cookie('MSPAuth') 
+
         except (NoSuchElementException, TimeoutException) as err:
             print("Couldn't initialize browser: %s", err)
+
+    def isAuthenticated(self):
+        return self.authToken != None
         
 
     def getStopWords(self):
@@ -137,6 +143,8 @@ class BingSearcher:
     def _install_adblock(self):
         xpi_name = get_adblock()
         self.profile.add_extension(xpi_name)
+
+    
         
     
 

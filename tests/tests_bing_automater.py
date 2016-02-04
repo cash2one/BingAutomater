@@ -123,6 +123,7 @@ class TestDriver(unittest.TestCase):
         self.bs.initializeDriver()
         d = self.bs.driver
         # test to see if it can get to the entry page
+        time.sleep(3)
         url = 'login.live.com' 
         d.get(url)
 
@@ -139,7 +140,7 @@ class TestDriver(unittest.TestCase):
 
         # if everything worked go to bing page
         d.get('http://bing.com')
-        time.sleep(3)
+        time.sleep(10)
         try:
             # here you should see your name inside the contents of id_n
             e = WebDriverWait(d, 5).until(
@@ -149,6 +150,28 @@ class TestDriver(unittest.TestCase):
             
         except NoSuchElementException:
             self.fail("Couldn't authenticate")
+
+    def test_isAuthenticated_returnsFalseWhenNotLoggedIn(self):
+        self.bs.initializeDriver()
+        self.bs.authenticate()
+
+        authToken = self.bs.authToken
+        is_authenticated = self.bs.isAuthenticated()
+
+        self.assertIsNone(authToken) 
+
+        self.assertFalse(is_authenticated)
+
+    def test_isAuthenticated_returnsTrueWhenLoggedIn(self):
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        self.bs.authenticate()
+
+        authToken = self.bs.authToken
+        is_authenticated = self.bs.isAuthenticated()
+
+        self.assertIsNotNone(authToken)
+        self.assertTrue(is_authenticated)
         
 
     def tearDown(self):
