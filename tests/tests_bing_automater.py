@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 
 import BingAutomater
-from BingAutomater import BingSearcher
+from BingAutomater import BingSearcher, MobileSearcher
 
 
 
@@ -78,19 +78,19 @@ class TestUtilities(unittest.TestCase):
         os.remove(fName)
         
     
-class TestDriver(unittest.TestCase):
+class TestBingSearcher(unittest.TestCase):
     def setUp(self):
         self.auth_info = "user", "pass"
         self.bs = BingSearcher(self.auth_info) 
     
-    def test_BingSearcher_initial_attributes(self):
+    def test_check_initial_attributes(self):
         s = self.bs
 
         # test if the preferences are the same
         self.assertEqual(s.profile.default_preferences, BingAutomater.make_profile().default_preferences)
         self.assertEqual(self.auth_info, (s.user, s.pw))
 
-    def test_BingSearcher_can_get_stop_words(self):
+    def test_searcher_can_get_stop_words(self):
         # not sure what kind of stopwords we will have
         # just check to see if length of stopwords is larger than one as a
         # smoke screen
@@ -172,6 +172,17 @@ class TestDriver(unittest.TestCase):
 
         self.assertIsNotNone(authToken)
         self.assertTrue(is_authenticated)
+
+    def test_gotoHome_takes_you_to_the_bing_page(self):
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        self.bs.authenticate()
+
+        self.bs.gotoHome()
+
+        title = self.bs.driver.title
+
+        self.assertEqual(title.strip(), 'Bing')
         
 
     def tearDown(self):
@@ -182,3 +193,85 @@ class TestDriver(unittest.TestCase):
 
         
          
+
+class MobileBingSearcher(TestBingSearcher):
+
+    def setUp(self):
+        self.auth_info = "user", "pass"
+        self.bs = MobileSearcher(self.auth_info) 
+
+    def test_check_initial_attributes(self):
+        ua = self.bs.profile.default_preferences['general.useragent.override']
+
+        # UA string must be the mobile ua string
+        self.assertEqual(BingAutomater.MOBILE_UA, ua)
+
+    def test_authenticate_a_user_into_outlook(self):
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        d = self.bs.driver
+
+
+        self.bs.authenticate()
+
+        # if everything worked you would see a signout link at the bottom of the page
+        try:
+            # here you should see your name inside the contents of id_n
+            e = WebDriverWait(d, 10).until(
+                EC.presence_of_element_located((By.XPATH, r'//*[@id="c_f_ul1"]/li[2]/span[1]')),
+            ) 
+            self.assertEqual(e.text.lower().strip(), 'sign out') 
+            
+        except NoSuchElementException:
+            self.fail("Couldn't authenticate")
+
+    def test_getRemainingSearches_setsAttribute(self):
+
+        self.fail("""
+        Implement a wait method so that the driver waits until, text is not none
+        https://github.com/SeleniumHQ/selenium/blob/master/py/selenium/webdriver/support/wait.py
+        https://github.com/SeleniumHQ/selenium/blob/master/py/selenium/webdriver/support/expected_conditions.py
+        """
+        )
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        d = self.bs.driver
+        self.bs.authenticate()
+
+        self.bs.updateRemainingSearches() 
+
+        remainingSearches = self.bs.remainingSearches
+
+        self.assertIsNotNone(remainingSearches)
+
+        # is it the correct result?
+        ns = MobileSearcher()
+        ns.initializeDriver()
+        ns.authenticate()
+        ns.driver.get(REWARDS_URL)
+
+        try:
+            e = WebDriverWait(ns.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, r'//*[@id="credit-progress"]/div[5]')),
+            )
+
+            done = int(e.find_element_by_class("primary").text)
+            outof = int(e.find_element_by_class("secondary").text.strip("/"))
+            remaining = outof - done 
+            
+            self.assertEqual(remaining, self.bs.remainingSearches)
+
+        except (NoSuchElementException, TimeoutException):
+            self.fail("The layout of bing rewards may have been changed")
+        except Exception as e:
+            self.fail("unknown failure: {}".format(str(e)))
+
+         
+        
+
+        
+
+
+    def tearDown(self):
+        if hasattr(self.bs, 'driver'):
+            self.bs.driver.close()

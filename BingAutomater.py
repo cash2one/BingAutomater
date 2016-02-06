@@ -20,12 +20,18 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
 # globals
-ENTRY_URL = "http://www.outlook.com"
+ENTRY_URL = "https://www.outlook.com"
+HOME_URL  = "https://bing.com"
+REWARDS_URL = "https://bing.com/rewards/dashboard"
 FILE_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 AUXILARY_DATA_DIRECTORY = os.path.join(FILE_DIRECTORY, 'auxilary_data')
 KEYWORD_FILES  = []
 PREPEND_AUX             = lambda f: os.path.join(AUXILARY_DATA_DIRECTORY, f)
 STOP_WORDS = PREPEND_AUX("stop-word-list.txt")
+
+# Mobile UA string, can change this to another mobile UA string
+# Run Tests afterwards to see if the change doesn't break the script
+MOBILE_UA = 'Mozilla/5.0 (Linux; Android 4.4.4; en-us; Nexus 5 Build/JOP40D)'
 
 def make_profile():
     """ Set up a profile and return it """
@@ -98,7 +104,7 @@ def get_stop_words(fileName = STOP_WORDS):
 # Classes #
 ###########
     
-class BingSearcher:
+class BingSearcher(object):
 
     def __init__(self,  auth_info=None, 
                  entry_url=ENTRY_URL, ua=None, 
@@ -106,6 +112,7 @@ class BingSearcher:
         self.profile = profile if profile else make_profile()
         self.user, self.pw = auth_info if auth_info else get_user_info()
         self.authToken = None
+        self.remainingSearches = None
 
        # self.initializeDriver()
 
@@ -135,6 +142,7 @@ class BingSearcher:
 
     def isAuthenticated(self):
         return self.authToken != None
+
         
 
     def getStopWords(self):
@@ -143,6 +151,10 @@ class BingSearcher:
     def _install_adblock(self):
         xpi_name = get_adblock()
         self.profile.add_extension(xpi_name)
+
+
+    def gotoHome(self):
+        self.driver.get(HOME_URL)
 
     
         
@@ -153,4 +165,36 @@ class PCSearcher(BingSearcher):
 
 
 class MobileSearcher(BingSearcher):
-    pass        
+    
+    def __init__(self, *args, **kwargs):
+        super(MobileSearcher, self).__init__(*args, **kwargs)
+        self.setUA()
+    
+    def setUA(self):
+        self.profile.set_preference('general.useragent.override', 
+                                     MOBILE_UA)
+
+    def updateRemainingSearches(self):
+        self.driver.get(REWARDS_URL)
+
+        try:
+            e = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, r'//*[@id="credit-progress"]/div[5]')),
+            )
+
+            done = int(e.find_element_by_class_name("primary").text)
+            total = int(
+                e.find_element_by_class_name("secondary").text.strip("/")
+            )
+            self.remainingSearches = total - done
+
+        except TimeoutException:
+            e = None
+
+
+
+        
+
+    
+
+
