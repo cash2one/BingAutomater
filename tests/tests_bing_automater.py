@@ -76,6 +76,11 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(dummy_password, passInfo) 
 
         os.remove(fName)
+
+    def test_element_text_is_not_empty(self):
+        """Need to create an html document with a timed function that sets text"""
+        self.fail("not implemented")
+        
         
     
 class TestBingSearcher(unittest.TestCase):
@@ -227,12 +232,6 @@ class MobileBingSearcher(TestBingSearcher):
 
     def test_getRemainingSearches_setsAttribute(self):
 
-        self.fail("""
-        Implement a wait method so that the driver waits until, text is not none
-        https://github.com/SeleniumHQ/selenium/blob/master/py/selenium/webdriver/support/wait.py
-        https://github.com/SeleniumHQ/selenium/blob/master/py/selenium/webdriver/support/expected_conditions.py
-        """
-        )
         self.bs.initializeDriver()
         self.bs.user, self.bs.pw = BingAutomater.get_user_info()
         d = self.bs.driver
@@ -248,23 +247,25 @@ class MobileBingSearcher(TestBingSearcher):
         ns = MobileSearcher()
         ns.initializeDriver()
         ns.authenticate()
-        ns.driver.get(REWARDS_URL)
+        ns.driver.get(BingAutomater.REWARDS_URL)
 
         try:
             e = WebDriverWait(ns.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, r'//*[@id="credit-progress"]/div[5]')),
+                BingAutomater.text_to_be_present_not_empty(
+                    (By.XPATH, r'//*[@id="credit-progress"]/div[5]')
+                ),
             )
 
-            done = int(e.find_element_by_class("primary").text)
-            outof = int(e.find_element_by_class("secondary").text.strip("/"))
+            done = int(e.find_element_by_class_name("primary").text)
+            outof = int(e.find_element_by_class_name("secondary").text.strip("/"))
             remaining = outof - done 
             
             self.assertEqual(remaining, self.bs.remainingSearches)
 
         except (NoSuchElementException, TimeoutException):
             self.fail("The layout of bing rewards may have been changed")
-        except Exception as e:
-            self.fail("unknown failure: {}".format(str(e)))
+        finally:
+            ns.driver.close()
 
          
         

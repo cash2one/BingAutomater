@@ -12,7 +12,9 @@ import time
 
 from selenium import webdriver 
 from selenium.common.exceptions import (TimeoutException,  
-                NoSuchElementException, UnexpectedAlertPresentException) 
+               NoSuchElementException, 
+               UnexpectedAlertPresentException,
+               StaleElementReferenceException) 
 from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0 
 from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
 from selenium.webdriver.common.alert import Alert
@@ -100,6 +102,20 @@ def get_stop_words(fileName = STOP_WORDS):
                         map(lambda line: line.strip(), fh.readlines()))
     return stopwords
 
+class text_to_be_present_not_empty(object):
+    """ An expectation for checking if the given elements text is not empty."""
+
+    def __init__(self, locator):
+        self.locator = locator
+
+    def __call__(self, driver):
+        try:
+            element = EC._find_element(driver, self.locator)
+            return element.text != "" and element
+
+        except StaleElementReferenceException:
+            return False
+
 ############
 # Classes #
 ###########
@@ -179,7 +195,7 @@ class MobileSearcher(BingSearcher):
 
         try:
             e = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, r'//*[@id="credit-progress"]/div[5]')),
+                text_to_be_present_not_empty((By.XPATH, r'//*[@id="credit-progress"]/div[5]')),
             )
 
             done = int(e.find_element_by_class_name("primary").text)
