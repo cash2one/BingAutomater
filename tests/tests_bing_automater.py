@@ -12,8 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 
 import BingAutomater
-from BingAutomater import BingSearcher, MobileSearcher
-
+from BingAutomater import BingSearcher, MobileSearcher, PCSearcher
 
 
 class TestUtilities(unittest.TestCase):
@@ -82,7 +81,7 @@ class TestUtilities(unittest.TestCase):
         self.fail("not implemented")
         
         
-    
+#@unittest.skip('skipping base class tests')    
 class TestBingSearcher(unittest.TestCase):
     def setUp(self):
         self.auth_info = "user", "pass"
@@ -196,10 +195,58 @@ class TestBingSearcher(unittest.TestCase):
         except AttributeError:
             pass
 
-        
-         
 
-class MobileBingSearcher(TestBingSearcher):
+class TestPCBingSearcher(unittest.TestCase):
+    """ Not inheriting from base test class since that one replicates most of the functionallity in this class """
+    
+    def setUp(self):
+        self.auth_info = "user", "pass"
+        self.bs = PCSearcher(self.auth_info)     
+
+    def test_updateRemainingSearches_setsAttribute(self):
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+    
+        d = self.bs.driver
+
+        self.bs.authenticate()
+
+        self.bs.updateRemainingSearches()
+
+        self.assertIsNotNone(self.bs.remainingSearches)  
+
+        # check if it is the correct result by manually doing it here
+        ns = PCSearcher()
+        ns.initializeDriver()
+        ns.authenticate()
+        ns.driver.get(BingAutomater.REWARDS_URL) 
+
+        try:
+            e = WebDriverWait(ns.driver, 10).until (
+                EC.presence_of_element_located((By.XPATH, '//*[@id="srch1-2-15-NOT_T1T3_Control-Exist"]/div[2]'))
+            )
+
+            done, _, out_of, _ = e.text.split()
+            remaining = int(out_of) - int(done)
+
+            self.assertEqual(remaining, self.bs.remainingSearches)
+            
+        except (NoSuchElementException, TimeoutException):
+            self.fail("Couldn't Find the pc progress element")
+        finally:
+            ns.driver.close()
+            
+
+        
+    
+    def tearDown(self):
+        if hasattr(self.bs, 'driver'):
+            self.bs.driver.close()
+
+
+         
+#@unittest.skip('skipping mobile searcher tests')
+class TestMobileBingSearcher(TestBingSearcher):
 
     def setUp(self):
         self.auth_info = "user", "pass"
@@ -266,11 +313,6 @@ class MobileBingSearcher(TestBingSearcher):
             self.fail("The layout of bing rewards may have been changed")
         finally:
             ns.driver.close()
-
-         
-        
-
-        
 
 
     def tearDown(self):

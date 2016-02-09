@@ -31,6 +31,13 @@ KEYWORD_FILES  = []
 PREPEND_AUX             = lambda f: os.path.join(AUXILARY_DATA_DIRECTORY, f)
 STOP_WORDS = PREPEND_AUX("stop-word-list.txt")
 
+# xpaths
+
+XPATHS = {
+    'pc_progress'        : r'//*[@id="srch1-2-15-NOT_T1T3_Control-Exist"]/div[2]',
+    'mobile_progress'    : r'//*[@id="credit-progress"]/div[5]',
+}
+
 # Mobile UA string, can change this to another mobile UA string
 # Run Tests afterwards to see if the change doesn't break the script
 MOBILE_UA = 'Mozilla/5.0 (Linux; Android 4.4.4; en-us; Nexus 5 Build/JOP40D)'
@@ -172,13 +179,33 @@ class BingSearcher(object):
     def gotoHome(self):
         self.driver.get(HOME_URL)
 
+    def updateRemainingSearches(self):
+        return NotImplemented
+
     
         
     
 
 class PCSearcher(BingSearcher):
-    pass
 
+    def updateRemainingSearches(self):
+        self.driver.get(REWARDS_URL)
+        try:
+            e = WebDriverWait(self.driver, 10).until (
+                EC.presence_of_element_located((By.XPATH, XPATHS['pc_progress']))
+            )
+
+            done, _, out_of, _ = e.text.split()
+            remaining = int(out_of) - int(done)
+
+            self.remainingSearches = remaining
+
+            
+        except (NoSuchElementException, TimeoutException):
+            self.remainingSearches = 16
+        
+
+    
 
 class MobileSearcher(BingSearcher):
     
@@ -195,7 +222,9 @@ class MobileSearcher(BingSearcher):
 
         try:
             e = WebDriverWait(self.driver, 10).until(
-                text_to_be_present_not_empty((By.XPATH, r'//*[@id="credit-progress"]/div[5]')),
+                text_to_be_present_not_empty((By.XPATH, 
+                                              XPATHS['mobile_progress'])
+                                            ),
             )
 
             done = int(e.find_element_by_class_name("primary").text)
@@ -205,7 +234,7 @@ class MobileSearcher(BingSearcher):
             self.remainingSearches = total - done
 
         except TimeoutException:
-            e = None
+            self.remainingSearches = 11
 
 
 
