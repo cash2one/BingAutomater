@@ -195,7 +195,7 @@ class TestBingSearcher(unittest.TestCase):
         except AttributeError:
             pass
 
-
+#@unittest.skip('Skipping pc tests')
 class TestPCBingSearcher(unittest.TestCase):
     """ Not inheriting from base test class since that one replicates most of the functionallity in this class """
     
@@ -235,6 +235,34 @@ class TestPCBingSearcher(unittest.TestCase):
             self.fail("Couldn't Find the pc progress element")
         finally:
             ns.driver.close()
+
+    def test_getSpecialOffers(self):
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        self.bs.authenticate
+        d = self.bs.driver
+
+        ns = PCSearcher()
+        ns.initializeDriver()
+        ns.authenticate()
+        ns.driver.get(Bing_Automater.REWARDS_URL)
+
+        offer_box = ns.driver.find_element_by_xpath(BingAutomater.XPATHS['offer_box'])
+        offers = [offer for offer in offer_box.find_elements_by_tag_name('li') if 'of 1' in offer.text]
+
+        if len(offers) > 0:
+            self.bs.getSpecialOffers()
+            
+            ns.driver.refresh()
+            offer_box = ns.driver.find_element_by_xpath(BingAutomater.XPATHS['offer_box'])
+            offers = [offer for offer in offer_box.find_elements_by_tag_name('li') if 'of 1' in offer.text]
+
+            ns.driver.close()
+            self.assertEqual(0, len(offers))
+
+        else:
+            ns.driver.close()
+            self.assertTrue(True)
             
 
         
@@ -313,6 +341,40 @@ class TestMobileBingSearcher(TestBingSearcher):
             self.fail("The layout of bing rewards may have been changed")
         finally:
             ns.driver.close()
+
+    def test_getSpecialOffers(self):
+        # get to the rewards page
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        d = self.bs.driver
+        self.bs.authenticate()
+
+        ns = MobileSearcher()
+        ns.initializeDriver()
+        ns.authenticate()
+        ns.driver.get(BingAutomater.REWARDS_URL+'?showOffers=1')
+
+        offers = filter(lambda offer: 'Tap' in offer.text, ns.driver.find_elements_by_class_name('cta'))
+        # see if there are is anything to tap
+        if len(offers):
+            # if there is perform the operation
+            self.bs.getSpecialOffers() 
+            # after the action has been performed
+            # check to see if there are any remaining offers
+            ns.refresh()
+            offers = filter(
+                        lambda offer: 'Tap' in offer.text, 
+                        ns.driver.find_elements_by_class_name('cta')
+            )
+            
+            ns.driver.close()
+            # if there are, then the test failed. otherwise operation is a success
+            self.assertEqual(0, len(offers))
+            
+        
+        else: 
+            # if not I guess the test passed
+            self.assertTrue(True)
 
 
     def tearDown(self):

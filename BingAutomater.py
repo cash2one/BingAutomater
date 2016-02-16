@@ -36,6 +36,7 @@ STOP_WORDS = PREPEND_AUX("stop-word-list.txt")
 XPATHS = {
     'pc_progress'        : r'//*[@id="srch1-2-15-NOT_T1T3_Control-Exist"]/div[2]',
     'mobile_progress'    : r'//*[@id="credit-progress"]/div[5]',
+    'offer_box'          : r'//*[@class="offers"]/div[1]',
 }
 
 # Mobile UA string, can change this to another mobile UA string
@@ -182,6 +183,9 @@ class BingSearcher(object):
     def updateRemainingSearches(self):
         return NotImplemented
 
+    def getSpecialOffers(self):
+        return NotImplemented
+
     
         
     
@@ -203,10 +207,38 @@ class PCSearcher(BingSearcher):
             
         except (NoSuchElementException, TimeoutException):
             self.remainingSearches = 16
+
+    def getSpecialOffers(self):
+        self.driver.get(REWARDS_URL)
         
 
-    
+        main_window = self.driver.current_window_handle
+        offerBox = self.driver.find_element_by_xpath(XPATHS['offer_box'])
+        offers = filter(lambda offer: 'of 1' in offer.text,
+                    offerBox.find_elements_by_tag_name('li')
+        )
 
+        while len(offers) > 0:
+            offers[0].click()
+                
+            try:
+                #a new window opens up 
+                new_window_handle = self.driver.window_handles[1]
+                self.driver.switch_to_window(new_window_handle)
+                self.driver.close()
+                self.driver.switch_to_window(main_window)
+
+            except IndexError:
+                # new window doesn't open up
+                driver.back()
+
+            self.driver.refresh()
+            offerBox = self.driver.find_element_by_xpath(XPATHS['offer_box'])
+            offers = filter(lambda offer: 'of 1' in offer.text,
+                        offerBox.find_elements_by_tag_name('li')
+            )
+            
+                
 class MobileSearcher(BingSearcher):
     
     def __init__(self, *args, **kwargs):
@@ -235,6 +267,28 @@ class MobileSearcher(BingSearcher):
 
         except TimeoutException:
             self.remainingSearches = 11
+
+    def getSpecialOffers(self):
+        showRewardsQuery = '?showOffers=1'
+        self.driver.get(REWARDS_URL+showRewardsQuery)
+
+        offers = filter(lambda offer: 'Tap' in offer.text,
+                        self.driver.find_elements_by_class_name('cta')
+        ) 
+
+
+        while len(offers) > 0:
+            offers[0].click()
+            time.sleep(5)
+            self.driver.get(REWARDS_URL+showRewardsQuery)
+            
+            
+            offers = filter(lambda offer: 'Tap' in offer.text,
+                        self.driver.find_elements_by_class_name('cta')
+            
+            )
+            
+            
 
 
 

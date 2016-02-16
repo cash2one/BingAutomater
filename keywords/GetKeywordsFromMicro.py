@@ -71,6 +71,7 @@ def getGetMoreLink(topic_main_url):
     return  link
 
 def getTopicName(soup):
+    """ Get the topic name for a page """
     topic = soup.find(id = 'ctl00_MainContent_lblTopObjects').text.strip()
     topic = re.sub(r'[^ A-Za-z]', "", topic)
     return "_".join(re.sub(r'Top keywords in', "", topic).split())
@@ -80,6 +81,7 @@ def main():
 
     topic_links = getTopicPages()
 
+    # get the links for all the topic pages
     keyword_page_links = map(lambda url: getGetMoreLink(url), topic_links)
 
     for kw_page in keyword_page_links:
@@ -93,6 +95,7 @@ def main():
 
 
         # put a safety control on for testing
+        # you can remove the second condition to get all the keywords
         i = 0
         while next_link and i < MAX_NEXT:
             content = getContent(ROOT_DOMAIN+next_link)
