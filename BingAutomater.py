@@ -21,6 +21,7 @@ from selenium.webdriver.support import expected_conditions as EC # available sin
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.common.keys import Keys
 
 # globals
 ENTRY_URL = "https://www.outlook.com"
@@ -136,8 +137,9 @@ class BingSearcher(object):
                  profile=None):
         self.profile = profile if profile else make_profile()
         self.user, self.pw = auth_info if auth_info else get_user_info()
-        self.authToken = None
+        self.authToken     = None
         self.remainingSearches = None
+        self.mainWindowHandle  = None
 
        # self.initializeDriver()
 
@@ -146,6 +148,7 @@ class BingSearcher(object):
         self.getStopWords()
         self._install_adblock()        
         self.driver = webdriver.Firefox(self.profile)
+        
 
     def authenticate(self):
         self.driver.get(ENTRY_URL)
@@ -204,6 +207,21 @@ class BingSearcher(object):
             
         with open(f, 'r') as fh:
             self.searchTerms = map(lambda l: l.strip(), fh.readlines())
+
+
+    def closeExtraWindows(self):
+        otherWindows = self.driver.window_handles[1:] 
+
+        if (self.driver.window_handles) > 1:
+            for w in otherWindows:
+                self.driver.switch_to_window(w)
+                self.driver.close()
+
+            self.switchToMainWindow() 
+
+
+    def switchToMainWindow(self): 
+        self.driver.switch_to_window(self.mainWindowHandle)
 
     
 

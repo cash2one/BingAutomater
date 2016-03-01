@@ -133,6 +133,13 @@ class TestBingSearcher(unittest.TestCase):
 
         self.assertIn(url, d.current_url)
 
+
+    def test_initializeDriver_setsMainWindow(self):
+        self.bs.initializeDriver()
+        mainHandle = self.bs.mainWindowHandle
+
+        self.assertIsNotNone(mainHandle)
+
     
     def test_authenticate_a_user_into_outlook(self):
         self.bs.initializeDriver()
@@ -207,6 +214,24 @@ class TestBingSearcher(unittest.TestCase):
     
     def test_click_doesNotClickOnAForbiddenElement(self):
         self.fail("Not Implemented")
+
+    def test_multipleWindowsGetClosed(self):
+        self.bs.initializeDriver()
+        mainWindowHandle = self.bs.mainWindowHandle
+        d = self.bs.driver
+
+        # open up several windows
+        body = d.find_element_by_tag_name('body')
+        for i in range(3): 
+            d.execute_script("window.open('')")
+
+        self.assertEqual(len(d.window_handles), 4)
+
+        self.bs.closeExtraWindows()
+
+        # Close all windows and make sure your back on the main window
+        self.assertEqual(len(d.window_handles), 1)
+        self.assertEqual(d.current_window_handle, mainWindowHandle)
         
          
 
