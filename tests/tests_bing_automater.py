@@ -187,11 +187,35 @@ class TestBingSearcher(unittest.TestCase):
         title = self.bs.driver.title
 
         self.assertEqual(title.strip(), 'Bing')
+
+
+    def test_populateKeywords_setsKeywordAttribute(self):
+        kw = ['python', 'is', 'cool']
+
+        with open('dummy.txt', 'w') as fp:
+            for i in kw:
+                fp.write(i)
+                fp.write('\n')
+
+        self.bs.populateSearchTerms('dummy.txt')
         
+         
+        self.assertEqual(kw, self.bs.searchTerms)
+
+    def test_click_clicksOnElement(self):
+        self.fail("Not Implemented")
+    
+    def test_click_doesNotClickOnAForbiddenElement(self):
+        self.fail("Not Implemented")
+        
+         
 
     def tearDown(self):
         try:
             self.bs.driver.close()
+
+            if os.path.exists('dummy.txt'): 
+                os.remove('dummy.txt')
         except AttributeError:
             pass
 
@@ -245,7 +269,7 @@ class TestPCBingSearcher(unittest.TestCase):
         ns = PCSearcher()
         ns.initializeDriver()
         ns.authenticate()
-        ns.driver.get(Bing_Automater.REWARDS_URL)
+        ns.driver.get(BingAutomater.REWARDS_URL)
 
         offer_box = ns.driver.find_element_by_xpath(BingAutomater.XPATHS['offer_box'])
         offers = [offer for offer in offer_box.find_elements_by_tag_name('li') if 'of 1' in offer.text]
@@ -263,6 +287,30 @@ class TestPCBingSearcher(unittest.TestCase):
         else:
             ns.driver.close()
             self.assertTrue(True)
+
+
+    def test_playTriviaGame(self):
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        d = self.bs.driver
+        self.bs.authenticate()
+
+        ns = PCSearcher()
+        ns.initializeDriver()
+        ns.authenticate()
+        ns.driver.get(BingAutomater.REWARDS_URL+'?showOffers=1')
+
+        # Check to see if game is playable
+
+        # if it is, mark how many credits have been received so far
+
+        # play it
+        
+        # at the end, check to see if you have full credits
+
+        # pass if so
+
+        # if game is not playable fail with message
             
 
         
@@ -361,7 +409,7 @@ class TestMobileBingSearcher(TestBingSearcher):
             self.bs.getSpecialOffers() 
             # after the action has been performed
             # check to see if there are any remaining offers
-            ns.refresh()
+            ns.driver.refresh()
             offers = filter(
                         lambda offer: 'Tap' in offer.text, 
                         ns.driver.find_elements_by_class_name('cta')

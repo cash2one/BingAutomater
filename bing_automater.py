@@ -144,13 +144,13 @@ def initialize_driver(url, userInfo, passInfo, prof = None ):
 def get_driver_ua(driver):
     return driver.execute_script("return navigator.userAgent")
 
-def search_email_for(driver, text="Bing"):
-    if "Outlook" not in driver.title:
-        print ("not on email page")
-    q = driver.find_element_by_name("query")
-    q.send_keys(text) 
-    q.submit()
-    time.sleep(5)
+#def search_email_for(driver, text="Bing"):
+#    if "Outlook" not in driver.title:
+#        print ("not on email page")
+#    q = driver.find_element_by_name("query")
+#    q.send_keys(text) 
+#    q.submit()
+#    time.sleep(5)
 
 def get_bing_page(driver, url = BING_URL):
     driver.get(url)

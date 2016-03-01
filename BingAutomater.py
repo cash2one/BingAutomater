@@ -8,6 +8,7 @@ import os
 import shutil
 from zipfile import ZipFile
 import time
+import random
 
 
 from selenium import webdriver 
@@ -110,6 +111,10 @@ def get_stop_words(fileName = STOP_WORDS):
                         map(lambda line: line.strip(), fh.readlines()))
     return stopwords
 
+
+############
+# Classes #
+###########
 class text_to_be_present_not_empty(object):
     """ An expectation for checking if the given elements text is not empty."""
 
@@ -123,10 +128,6 @@ class text_to_be_present_not_empty(object):
 
         except StaleElementReferenceException:
             return False
-
-############
-# Classes #
-###########
     
 class BingSearcher(object):
 
@@ -186,6 +187,26 @@ class BingSearcher(object):
     def getSpecialOffers(self):
         return NotImplemented
 
+    def click(self, element):
+        # control what is clicked and click
+        return NotImplemented
+
+    def query(self, q='Bing Wikipedia'):
+        # search bing
+        return NotImplemented
+
+
+    def populateSearchTerms(self, f=None):
+        if f is None:
+            if len(KEYWORD_FILES) == 0:
+                get_keyword_files()
+            f = random.choice(KEYWORD_FILES)
+            
+        with open(f, 'r') as fh:
+            self.searchTerms = map(lambda l: l.strip(), fh.readlines())
+
+    
+
     
         
     
@@ -237,6 +258,10 @@ class PCSearcher(BingSearcher):
             offers = filter(lambda offer: 'of 1' in offer.text,
                         offerBox.find_elements_by_tag_name('li')
             )
+
+
+    def playTriviaGame(self):
+        return NotImplemented
             
                 
 class MobileSearcher(BingSearcher):
