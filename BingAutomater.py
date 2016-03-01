@@ -10,6 +10,8 @@ from zipfile import ZipFile
 import time
 import random
 
+import requests
+
 
 from selenium import webdriver 
 from selenium.common.exceptions import (TimeoutException,  
@@ -67,19 +69,27 @@ def get_adblock():
     dest_dir = 'adblockplus'
     ##adblock_git_url = 'https://github.com/adblockplus/adblockplus.git'
     adblock_git_url = 'https://github.com/adblockplus/adblockplus/archive/master.zip'
+    buildtools_url = 'https://github.com/adblockplus/buildtools/archive/master.zip'
     
     #check to see if adblock.xpi doesn't already exist
     if not os.path.exists(os.path.join(FILE_DIRECTORY, adblock_file_name)):
         # download the repo
         adp_zip_name = adblock_file_name.split('.')[0] + '.zip'
         adp_zip = requests.get(adblock_git_url)
+        buildtools_zip = requests.get(buildtools_url)
         # write to zip
         with open(adp_zip_name, 'wb') as fh:
             fh.write(adp_zip.content)
+        with open('buildtools.zip', 'wb') as fh:
+            fh.write(buildtools_zip.content)
+
         # make directory
         os.makedirs(dest_dir)
         with ZipFile(adp_zip_name, 'r') as zf:
             zf.extractall(dest_dir)
+
+        with ZipFile('buildtools.zip') as zf:
+            zf.extractall(dest_dir+'/adblockplus-master')
         # execute the build
         os.system("python {0}/adblockplus-master/build.py build {1}".format(
                                                     dest_dir, adblock_file_name))
@@ -88,6 +98,7 @@ def get_adblock():
         #clean up
         os.remove(adp_zip_name)
         shutil.rmtree(dest_dir)
+        os.remove('buildtools.zip')
 
     return adblock_file_name
 

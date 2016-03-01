@@ -59,8 +59,8 @@ def get_adblock():
     global adblock_xpi
     adblock_file_name = 'adblock.xpi'
     dest_dir = 'adblockplus'
-    ##adblock_git_url = 'https://github.com/adblockplus/adblockplus.git'
-    adblock_git_url = 'https://github.com/adblockplus/adblockplus/archive/master.zip'
+    adblock_git_url = 'https://github.com/adblockplus/adblockplus.git'
+    ##adblock_git_url = 'https://github.com/adblockplus/adblockplus/archive/master.zip'
     
     #check to see if adblock.xpi doesn't already exist
     if not os.path.exists(os.path.join(FILE_DIRECTORY, adblock_file_name)):
