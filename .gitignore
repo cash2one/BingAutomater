@@ -3,3 +3,4 @@ auxilary_data
 ghostdriver.log
 *.pyc
 *.swp
+.idea

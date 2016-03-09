@@ -41,6 +41,9 @@ XPATHS = {
     'pc_progress'        : r'//*[@id="srch1-2-15-NOT_T1T3_Control-Exist"]/div[2]',
     'mobile_progress'    : r'//*[@id="credit-progress"]/div[5]',
     'offer_box'          : r'//*[@class="offers"]/div[1]',
+    'quiz'               : r'//*[@class="progress" and contains(text(), "3")]',
+    'quiz_link'          : r'//a[contains(@id, "BingRewardsQuiz")]',
+    'start_quiz'         : r'',
 }
 
 # Mobile UA string, can change this to another mobile UA string
@@ -159,6 +162,7 @@ class BingSearcher(object):
         self.getStopWords()
         self._install_adblock()        
         self.driver = webdriver.Firefox(self.profile)
+        self.mainWindowHandle = self.driver.current_window_handle
         
 
     def authenticate(self):
@@ -203,7 +207,11 @@ class BingSearcher(object):
 
     def click(self, element):
         # control what is clicked and click
-        return NotImplemented
+
+        if hasattr(element, 'click'):
+            # process link
+            element.click()
+        
 
     def query(self, q='Bing Wikipedia'):
         # search bing
@@ -280,7 +288,7 @@ class PCSearcher(BingSearcher):
 
             except IndexError:
                 # new window doesn't open up
-                driver.back()
+                self.driver.back()
 
             self.driver.refresh()
             offerBox = self.driver.find_element_by_xpath(XPATHS['offer_box'])
@@ -290,7 +298,49 @@ class PCSearcher(BingSearcher):
 
 
     def playTriviaGame(self):
-        return NotImplemented
+        self.driver.get(REWARDS_URL)
+        l = self.driver.find_element_by_xpath(XPATHS['quiz_link'])
+        self.click(l)
+
+        trivia_window = self.driver.window_handles[-1]
+        # switch to window
+        self.driver.switch_to_window(trivia_window)
+        start_game = self.driver.find_elements_by_id('rqStartQuiz')
+        
+        # start the trivia game
+        self.click(start_game)
+
+        def quizIsDone():
+            try:
+                e = (self
+                    .driver
+                    .find_element_by_xpath(r'//*[@id="quizCompleteContainer" '
+                                             'and not('
+                                              'contains(@class, "b_hide"))]')
+                )
+                return True
+            except NoSuchElementException:
+                return False
+                
+
+        time.sleep(10)
+
+        while not quizIsDone():
+            # blacked out answers have optionDisable class thats why the 
+            # space is left in the xpath below
+            options = (self
+                       .driver
+                       .find_elements_by_xpath('//*[@class="option "]')
+            )
+
+            self.click(random.choice(options))
+            time.sleep(5)
+
+        self.closeExtraWindows()
+            
+
+    
+        
             
                 
 class MobileSearcher(BingSearcher):

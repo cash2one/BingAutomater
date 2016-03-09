@@ -79,6 +79,20 @@ class TestUtilities(unittest.TestCase):
     def test_element_text_is_not_empty(self):
         """Need to create an html document with a timed function that sets text"""
         self.fail("not implemented")
+        # create an empty html doc
+        #doc = """
+       #        <!DOCTYPE html>
+       #        <html>
+       #         <body>
+       #         {}
+       #         </body>
+       #        </html>
+       #       """
+
+        #with open('test_html.html', 'w') as fh:
+        #    fh.write(doc)
+    
+         
         
         
 #@unittest.skip('skipping base class tests')    
@@ -271,7 +285,7 @@ class TestPCBingSearcher(unittest.TestCase):
         ns.driver.get(BingAutomater.REWARDS_URL) 
 
         try:
-            e = WebDriverWait(ns.driver, 10).until (
+            e = WebDriverWait(ns.driver, 30).until (
                 EC.presence_of_element_located((By.XPATH, '//*[@id="srch1-2-15-NOT_T1T3_Control-Exist"]/div[2]'))
             )
 
@@ -323,19 +337,24 @@ class TestPCBingSearcher(unittest.TestCase):
         ns = PCSearcher()
         ns.initializeDriver()
         ns.authenticate()
-        ns.driver.get(BingAutomater.REWARDS_URL+'?showOffers=1')
+        ns.driver.get(BingAutomater.REWARDS_URL)
 
-        # Check to see if game is playable
+        try:
+            e = ns.driver.find_element_by_xpath('//*[@class="progress" and contains(text(), "3")]')
+            
 
-        # if it is, mark how many credits have been received so far
+            credits_received = int(e.text.split(" ")[0])
+            
 
-        # play it
+            self.bs.playTriviaGame()
         
-        # at the end, check to see if you have full credits
+            ns.driver.refresh()
+            e = ns.driver.find_element_by_xpath('//*[@class="progress" and contains(text(), "3")]')
+            self.assertEqual(int(e.text), 3)
 
-        # pass if so
 
-        # if game is not playable fail with message
+        except NoSuchElementException:
+            self.fail("Couldn't find the quiz element")
             
 
         
