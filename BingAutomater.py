@@ -208,7 +208,7 @@ class BingSearcher(object):
         
 
     def query(self, q='Bing Wikipedia'):
-        if not "Bing" in driver.title:
+        if not "Bing" in self.driver.title:
             self.gotoHome()
         in_ = self.driver.find_element_by_id("sb_form_q")
         in_.clear()
@@ -236,6 +236,7 @@ class BingSearcher(object):
             if len(KEYWORD_FILES) == 0:
                 get_keyword_files()
             f = random.choice(KEYWORD_FILES)
+            f = PREPEND_AUX(f)
             
         with open(f, 'r') as fh:
             self.searchTerms = map(lambda l: l.strip(), fh.readlines())
