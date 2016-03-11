@@ -1,9 +1,3 @@
-"""
-What is needed for state?
-search_terms
-stop_words
-
-"""
 import os
 import shutil
 from zipfile import ZipFile
@@ -214,10 +208,29 @@ class BingSearcher(object):
         
 
     def query(self, q='Bing Wikipedia'):
-        # search bing
-        return NotImplemented
+        if not "Bing" in driver.title:
+            self.gotoHome()
+        in_ = self.driver.find_element_by_id("sb_form_q")
+        in_.clear()
+        in_.send_keys(search)
+        in_.submit()
 
+    def randomQuery(self):
+        q = None
+        trys = 0
+        MAX = 10
 
+        if not hasattr(self, 'searchTerms'):
+            self.populateSearchTerms()
+            
+
+        # in the previous version, an empty string could 
+        # have resulted. stay safe here
+        while not q and trys < MAX:
+            q = random.choice(self.searchTerms) 
+            trys += 1
+        return unicode(q, errors = 'replace')
+        
     def populateSearchTerms(self, f=None):
         if f is None:
             if len(KEYWORD_FILES) == 0:
@@ -337,6 +350,9 @@ class PCSearcher(BingSearcher):
             time.sleep(5)
 
         self.closeExtraWindows()
+
+    def getBottomPaneSearch(self):
+        self.driver.find_elements_by_xpath('//[@id="crs_pane"]/li')
             
 
     
@@ -391,6 +407,9 @@ class MobileSearcher(BingSearcher):
                         self.driver.find_elements_by_class_name('cta')
             
             )
+
+    def getBottomPaneSearch(self):
+        self.driver.find_elements_by_xpath('//*[@id="hc_popnow"//ul')
             
             
 

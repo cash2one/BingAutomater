@@ -2,6 +2,7 @@ import unittest
 import os
 import sys
 import time
+import random
 
 
 from selenium import webdriver
@@ -223,6 +224,34 @@ class TestBingSearcher(unittest.TestCase):
          
         self.assertEqual(kw, self.bs.searchTerms)
 
+    def test_getRandomQuery(self):
+        self.bs.initializeDriver()
+
+        q = self.bs.randomQuery()
+
+        self.assertIsNotNone(q)
+
+    def test_getRandomQueryDoesNotSetSearchTerms(self):
+        self.bs.initializeDriver()
+        searchTerms = ['python', 'is', 'cool']
+        self.bs.searchTerms = searchTerms
+
+        q = self.bs.randomQuery()
+        
+        self.assertEqual(self.bs.searchTerms, searchTerms)  
+        self.assertIn(q, searchTerms)
+        
+    def test_queryIsAbleToQuery(self):
+        self.bs.initializeDriver()
+        d = self.bs.driver
+        
+        query_string = random.choice('Linux Windows.10 Guitar Chairs Popular-Music'.split(' '))
+        self.bs.query(query_string)
+        time.sleep(2)
+
+        self.assertIn(query_string, d.title)
+
+
     def test_click_clicksOnElement(self):
         self.fail("Not Implemented")
     
@@ -353,12 +382,10 @@ class TestPCBingSearcher(unittest.TestCase):
             self.assertEqual(int(e.text), 3)
 
 
-        except NoSuchElementException:
-            self.fail("Couldn't find the quiz element")
+        except NoSuchElementException as e:
+            self.fail("Couldn't find the quiz element: {}".format(e))
             
 
-        
-    
     def tearDown(self):
         if hasattr(self.bs, 'driver'):
             self.bs.driver.close()
