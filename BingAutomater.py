@@ -10,6 +10,7 @@ import requests
 from selenium import webdriver 
 from selenium.common.exceptions import (TimeoutException,  
                NoSuchElementException, 
+                ElementNotVisibleException,
                UnexpectedAlertPresentException,
                StaleElementReferenceException) 
 from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0 
@@ -133,7 +134,7 @@ class text_to_be_present_not_empty(object):
     def __call__(self, driver):
         try:
             element = EC._find_element(driver, self.locator)
-            return element.text != "" and element
+            return element if element.text != "" else False
 
         except StaleElementReferenceException:
             return False
@@ -208,11 +209,11 @@ class BingSearcher(object):
         
 
     def query(self, q='Bing Wikipedia'):
-        if not "Bing" in driver.title:
+        if not "Bing" in self.driver.title:
             self.gotoHome()
         in_ = self.driver.find_element_by_id("sb_form_q")
         in_.clear()
-        in_.send_keys(search)
+        in_.send_keys(q)
         in_.submit()
 
     def randomQuery(self):
@@ -235,7 +236,7 @@ class BingSearcher(object):
         if f is None:
             if len(KEYWORD_FILES) == 0:
                 get_keyword_files()
-            f = random.choice(KEYWORD_FILES)
+            f = PREPEND_AUX(random.choice(KEYWORD_FILES))
             
         with open(f, 'r') as fh:
             self.searchTerms = map(lambda l: l.strip(), fh.readlines())
@@ -254,10 +255,6 @@ class BingSearcher(object):
 
     def switchToMainWindow(self): 
         self.driver.switch_to_window(self.mainWindowHandle)
-
-    
-
-    
         
     
 
@@ -266,6 +263,7 @@ class PCSearcher(BingSearcher):
     def updateRemainingSearches(self):
         self.driver.get(REWARDS_URL)
         try:
+            # add in a check to make sure not all credits are already claimed
             e = WebDriverWait(self.driver, 10).until (
                 EC.presence_of_element_located((By.XPATH, XPATHS['pc_progress']))
             )
@@ -339,15 +337,17 @@ class PCSearcher(BingSearcher):
         time.sleep(10)
 
         while not quizIsDone():
-            # blacked out answers have optionDisable class thats why the 
+            # blacked out answers have optionDisable class; thats why the 
             # space is left in the xpath below
             options = (self
                        .driver
                        .find_elements_by_xpath('//*[@class="option "]')
             )
 
-            self.click(random.choice(options))
-            time.sleep(5)
+            try:
+                self.click(random.choice(options))
+                time.sleep(5)
+            except ElementNotVisibleException:
 
         self.closeExtraWindows()
 
@@ -412,11 +412,3 @@ class MobileSearcher(BingSearcher):
         self.driver.find_elements_by_xpath('//*[@id="hc_popnow"//ul')
             
             
-
-
-
-        
-
-    
-
-

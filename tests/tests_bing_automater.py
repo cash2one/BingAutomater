@@ -15,6 +15,26 @@ from selenium.webdriver.common.by import By
 import BingAutomater
 from BingAutomater import BingSearcher, MobileSearcher, PCSearcher
 
+test_html = """
+               <!DOCTYPE html>
+               <html>
+                <body>
+
+                    <script>
+                    (function main() {
+                      var newNode = document.createElement('p');
+                      document.body.appendChild(newNode); 
+                      
+                      window.setTimeout(function() {
+                        newNode.innerText = "not null"; 
+                      }, %s);
+                    }());
+                    </script>
+                
+                </body>
+               </html>
+"""
+
 
 class TestUtilities(unittest.TestCase):
     
@@ -77,21 +97,8 @@ class TestUtilities(unittest.TestCase):
 
         os.remove(fName)
 
-    def test_element_text_is_not_empty(self):
-        """Need to create an html document with a timed function that sets text"""
-        self.fail("not implemented")
-        # create an empty html doc
-        #doc = """
-       #        <!DOCTYPE html>
-       #        <html>
-       #         <body>
-       #         {}
-       #         </body>
-       #        </html>
-       #       """
 
-        #with open('test_html.html', 'w') as fh:
-        #    fh.write(doc)
+        
     
          
         
@@ -275,8 +282,51 @@ class TestBingSearcher(unittest.TestCase):
         # Close all windows and make sure your back on the main window
         self.assertEqual(len(d.window_handles), 1)
         self.assertEqual(d.current_window_handle, mainWindowHandle)
+
+    def test_element_text_is_not_empty(self):
+        # wait 5 seconds
+        delay_time = 5000
+        file_name = 'test_html.html'
+
+        self.bs.initializeDriver()
+
+        with open(file_name, 'w') as fh:
+            # test with specified delaytime
+            fh.write(test_html % (delay_time))
+
+        # now you can navigate to the file
+        self.bs.driver.get('file://'+os.getcwd() + '/'+ file_name)
+
+        e = WebDriverWait(self.bs.driver, 10).until(
+            BingAutomater.text_to_be_present_not_empty((By.XPATH, r'//p')),
+        )
         
-         
+
+        os.remove(file_name)
+        # if it all worked, then text should not be empty
+        self.assertNotEqual('', e.text) 
+
+
+    def test_element_text_is_empty(self):
+        delay_time = 5000
+        file_name = 'test_html.html'
+
+        self.bs.initializeDriver()
+        
+        with open(file_name, 'w') as fh:
+            fh.write(test_html % (delay_time))
+        
+        self.bs.driver.get('file://'+os.getcwd()+ '/' + file_name)
+
+        with self.assertRaises(TimeoutException):
+            e = WebDriverWait(self.bs.driver, 3).until(
+                BingAutomater.text_to_be_present_not_empty((By.XPATH, r'//p')),
+            )
+
+        os.remove(file_name)
+
+
+
 
     def tearDown(self):
         try:
@@ -327,6 +377,13 @@ class TestPCBingSearcher(unittest.TestCase):
             self.fail("Couldn't Find the pc progress element")
         finally:
             ns.driver.close()
+
+    def test_updateRemainingSearches_catchesAllPointsClaimedCondition(self):
+        # all finished items have
+        # a close-check class set
+        # if this class is present then
+        # remaining searches should be set to 0
+        self.fail("Not implemented")
 
     def test_getSpecialOffers(self):
         self.bs.initializeDriver()
