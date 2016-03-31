@@ -348,6 +348,7 @@ class PCSearcher(BingSearcher):
                 self.click(random.choice(options))
                 time.sleep(5)
             except ElementNotVisibleException:
+                time.sleep(5)
 
         self.closeExtraWindows()
 
