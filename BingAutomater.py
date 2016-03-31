@@ -151,6 +151,7 @@ class BingSearcher(object):
         self.mainWindowHandle  = None
 
        # self.initializeDriver()
+        self.restrictedPaths = []
 
     def initializeDriver(self):
         """ Sets driver and loads outlook Page """
@@ -202,10 +203,17 @@ class BingSearcher(object):
 
     def click(self, element):
         # control what is clicked and click
+        if (hasattr(element, 'text') 
+            and any([blocked in element.text for blocked  in self.restrictedPaths])):
+            # break from here if the link has restricted text
 
+            return
+            
         if hasattr(element, 'click'):
             # process link
             element.click()
+
+            
         
 
     def query(self, q='Bing Wikipedia'):
@@ -268,10 +276,15 @@ class PCSearcher(BingSearcher):
                 EC.presence_of_element_located((By.XPATH, XPATHS['pc_progress']))
             )
 
-            done, _, out_of, _ = e.text.split()
-            remaining = int(out_of) - int(done)
+            if 'of' in e.text:
 
-            self.remainingSearches = remaining
+                done, _, out_of, _ = e.text.split()
+                remaining = int(out_of) - int(done)
+
+                self.remainingSearches = remaining
+
+            else:
+                self.remainingSearches = 0
 
             
         except (NoSuchElementException, TimeoutException):

@@ -15,6 +15,7 @@ from selenium.webdriver.common.by import By
 import BingAutomater
 from BingAutomater import BingSearcher, MobileSearcher, PCSearcher
 
+# this is used for the custom selenium wait function
 test_html = """
                <!DOCTYPE html>
                <html>
@@ -26,7 +27,7 @@ test_html = """
                       document.body.appendChild(newNode); 
                       
                       window.setTimeout(function() {
-                        newNode.innerText = "not null"; 
+                        newNode.innerHTML = "not null"; 
                       }, %s);
                     }());
                     </script>
@@ -260,10 +261,43 @@ class TestBingSearcher(unittest.TestCase):
 
 
     def test_click_clicksOnElement(self):
-        self.fail("Not Implemented")
+        self.bs.initializeDriver()
+        self.bs.gotoHome()
+
+        # this is the images button on the bing home page
+        click_on = '//*[@id="scpl0"]'
+        self.bs.restrictedPaths = []
+
+        e = self.bs.driver.find_element_by_xpath(click_on)
+        current_url = self.bs.driver.current_url
+        self.bs.click(e)
+        new_url = self.bs.driver.current_url
+
+        self.assertNotEqual(current_url, new_url)
+        
+         
+
+        
+
+        
     
     def test_click_doesNotClickOnAForbiddenElement(self):
-        self.fail("Not Implemented")
+
+        self.bs.initializeDriver()
+        self.bs.gotoHome()
+
+        # this is the images button on the bing home page
+        click_on = '//*[@id="scpl0"]'
+
+
+        self.bs.restrictedPaths = ['Images',]
+        e = self.bs.driver.find_element_by_xpath(click_on)
+        current_url = self.bs.driver.current_url
+        self.bs.click(e)
+        new_url = self.bs.driver.current_url
+
+        self.assertEqual(current_url, new_url)
+
 
     def test_multipleWindowsGetClosed(self):
         self.bs.initializeDriver()
@@ -368,10 +402,12 @@ class TestPCBingSearcher(unittest.TestCase):
                 EC.presence_of_element_located((By.XPATH, '//*[@id="srch1-2-15-NOT_T1T3_Control-Exist"]/div[2]'))
             )
 
-            done, _, out_of, _ = e.text.split()
-            remaining = int(out_of) - int(done)
+            if 'of' in e.text:
+                done, _, out_of, _ = e.text.split()
+                remaining = int(out_of) - int(done)
 
-            self.assertEqual(remaining, self.bs.remainingSearches)
+                self.assertEqual(remaining, self.bs.remainingSearches)
+            
             
         except (NoSuchElementException, TimeoutException):
             self.fail("Couldn't Find the pc progress element")
@@ -379,11 +415,33 @@ class TestPCBingSearcher(unittest.TestCase):
             ns.driver.close()
 
     def test_updateRemainingSearches_catchesAllPointsClaimedCondition(self):
-        # all finished items have
-        # a close-check class set
-        # if this class is present then
-        # remaining searches should be set to 0
-        self.fail("Not implemented")
+        self.bs.initializeDriver()
+        self.bs.user, self.bs.pw = BingAutomater.get_user_info()
+        d = self.bs.driver
+        self.bs.authenticate()
+        self.bs.updateRemainingSearches()
+
+        ns = PCSearcher()
+        ns.initializeDriver()
+        ns.authenticate()
+        ns.driver.get(BingAutomater.REWARDS_URL)
+
+        try:
+            e = WebDriverWait(ns.driver, 30).until(
+                EC.presence_of_element_located((By.XPATH, BingAutomater.XPATHS['pc_progress']))
+            )
+
+            if 'of' not in e.text:
+                remaining = 0
+
+                self.assertEqual(remaining, self.bs.remainingSearches)                
+
+        except (NoSuchElementException, TimeoutException):
+            self.fail("Couldn't find the pc progress element")
+
+        finally:
+            ns.driver.close()
+
 
     def test_getSpecialOffers(self):
         self.bs.initializeDriver()
@@ -423,6 +481,7 @@ class TestPCBingSearcher(unittest.TestCase):
         ns = PCSearcher()
         ns.initializeDriver()
         ns.authenticate()
+        time.sleep(3)
         ns.driver.get(BingAutomater.REWARDS_URL)
 
         try:
@@ -436,11 +495,16 @@ class TestPCBingSearcher(unittest.TestCase):
         
             ns.driver.refresh()
             e = ns.driver.find_element_by_xpath('//*[@class="progress" and contains(text(), "3")]')
-            self.assertEqual(int(e.text), 3)
+
+            # should get 3 credits
+            self.assertEqual(int(e.text.split()[0]), 3)
 
 
         except NoSuchElementException as e:
             self.fail("Couldn't find the quiz element: {}".format(e))
+
+        finally:
+            ns.driver.close()
             
 
     def tearDown(self):
@@ -551,6 +615,8 @@ class TestMobileBingSearcher(TestBingSearcher):
         else: 
             # if not I guess the test passed
             self.assertTrue(True)
+
+        ns.driver.close()
 
 
     def tearDown(self):
