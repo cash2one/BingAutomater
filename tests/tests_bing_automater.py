@@ -275,11 +275,6 @@ class TestBingSearcher(unittest.TestCase):
 
         self.assertNotEqual(current_url, new_url)
         
-         
-
-        
-
-        
     
     def test_click_doesNotClickOnAForbiddenElement(self):
 
@@ -358,6 +353,14 @@ class TestBingSearcher(unittest.TestCase):
             )
 
         os.remove(file_name)
+
+
+    def test_getBottomPaneSearch(self):
+        self.bs.initializeDriver()
+
+        self.bs.getBottomPaneSearch()
+
+        self.assertNotEqual('bing', self.bs.driver.title)
 
 
 

@@ -138,7 +138,22 @@ class text_to_be_present_not_empty(object):
 
         except StaleElementReferenceException:
             return False
+
+class elements_to_be_present(object):
+    """ An expectation for checking if elements should be present """
     
+    def __init__(self, locator):
+        self.locator = locator
+    
+    def __call__(self, driver):
+        try:
+            elements = EC._find_elements(driver, self.locator)
+            return elements if len(elements) > 0 else False
+
+        except StaleElementReferenceException:
+            return False
+    
+
 class BingSearcher(object):
 
     def __init__(self,  auth_info=None, 
@@ -168,6 +183,11 @@ class BingSearcher(object):
                 EC.presence_of_element_located((By.NAME, 'loginfmt'))
             )
 
+
+        except (NoSuchElementException, TimeoutException) as err:
+            print("Couldn't initialize browser: %s", err)
+
+        else:
             pass_ = self.driver.find_element_by_name("passwd")
             user.send_keys(self.user)
             pass_.send_keys(self.pw)
@@ -175,9 +195,6 @@ class BingSearcher(object):
             time.sleep(5)
 
             self.authToken = self.driver.get_cookie('MSPAuth') 
-
-        except (NoSuchElementException, TimeoutException) as err:
-            print("Couldn't initialize browser: %s", err)
 
     def isAuthenticated(self):
         return self.authToken != None
@@ -276,6 +293,10 @@ class PCSearcher(BingSearcher):
                 EC.presence_of_element_located((By.XPATH, XPATHS['pc_progress']))
             )
 
+        except (NoSuchElementException, TimeoutException):
+            self.remainingSearches = 16
+
+        else:
             if 'of' in e.text:
 
                 done, _, out_of, _ = e.text.split()
@@ -285,10 +306,6 @@ class PCSearcher(BingSearcher):
 
             else:
                 self.remainingSearches = 0
-
-            
-        except (NoSuchElementException, TimeoutException):
-            self.remainingSearches = 16
 
     def getSpecialOffers(self):
         self.driver.get(REWARDS_URL)
@@ -303,17 +320,17 @@ class PCSearcher(BingSearcher):
         while len(offers) > 0:
             offers[0].click()
                 
-            try:
+            if len(self.driver.window_handles) > 1:
                 #a new window opens up 
                 new_window_handle = self.driver.window_handles[1]
                 self.driver.switch_to_window(new_window_handle)
                 self.driver.close()
                 self.driver.switch_to_window(main_window)
 
-            except IndexError:
-                # new window doesn't open up
+            else:# new window doesn't open up
                 self.driver.back()
 
+                
             self.driver.refresh()
             offerBox = self.driver.find_element_by_xpath(XPATHS['offer_box'])
             offers = filter(lambda offer: 'of 1' in offer.text,
@@ -342,10 +359,10 @@ class PCSearcher(BingSearcher):
                                              'and not('
                                               'contains(@class, "b_hide"))]')
                 )
-                return True
             except NoSuchElementException:
                 return False
-                
+            else:
+                return True
 
         time.sleep(10)
 
@@ -366,13 +383,22 @@ class PCSearcher(BingSearcher):
         self.closeExtraWindows()
 
     def getBottomPaneSearch(self):
-        self.driver.find_elements_by_xpath('//[@id="crs_pane"]/li')
-            
-
-    
+        if self.driver.title != 'Bing':
+            self.gotoHome()
         
-            
-                
+        try:
+            links = WebDriverWait(self.driver, 10).until (
+                elements_to_be_present((By.XPATH, '//*[@id="crs_pane"]/li'))
+            )
+
+        except (NoSuchElementException, TimeoutException):
+            return
+
+        else:
+            e = random.choice(links)
+            self.click(e)
+    
+
 class MobileSearcher(BingSearcher):
     
     def __init__(self, *args, **kwargs):
@@ -423,6 +449,22 @@ class MobileSearcher(BingSearcher):
             )
 
     def getBottomPaneSearch(self):
-        self.driver.find_elements_by_xpath('//*[@id="hc_popnow"//ul')
+        if self.driver.title != 'Bing':
+            self.gotoHome()
+
+        try:
+            links = WebDriverWait(self.driver, 10).until (
+                elements_to_be_present((By.XPATH, '//*[@id="hc_popnow"]//ul'))
+            )
+
+        except (NoSuchElementException, TimeoutException):
+            return
+
+        else:
+            e = random.choice(link)
+            self.click(e)
+    
+            
+        
             
             
