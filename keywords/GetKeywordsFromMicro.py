@@ -18,12 +18,11 @@ NEXT_PAGE_ID = 'ctl00_MainContent_bottomPageNext'
 MAX_NEXT     = 10
 
 def getKeywordsFromPage(soup):
-    kw = []
     # find the tbody
     tbody = soup.find('tbody')
 
     # all keywords are links
-    map(lambda a: kw.append(a.text.strip()), tbody.find_all('a'))
+    kw = [a.text.strip() for a in tbody.find_all('a')]
 
     return kw
 
@@ -51,8 +50,7 @@ def getTopicPages():
     side_bar = main_soup.find(class_='domain-list-nav')
     list_of_links = side_bar.find('ul')
 
-    
-    map(lambda a: links.append(a.get('href')), list_of_links.find_all('a'))
+    links = [a.get('href') for a in list_of_links.find_all('a')] 
 
     return links
 
